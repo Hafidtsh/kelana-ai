@@ -15,16 +15,33 @@
 # print(f"Currency     : {currency}")
 # print(f"Travel Month : {travel_month}")
 
-def print_trip_summary(destination, days, budget, travel_tyle):
+def print_trip_summary(destination, days, budget, travel_style, hotel_cost, food_cost, transportation_cost, miscellaneous_cost):
+
+    total_estimated_cost = (
+        hotel_cost
+        + food_cost
+        + transportation_cost
+        + miscellaneous_cost
+    )
+
     print("===========================")
     print("KelanaAI")
     print("===========================")
     print(f"Destination    : {destination}")
     print(f"Days           : {days}")
     print(f"Budget         : {budget}")
-    print(f"Style          : {travel_tyle}")
+    print(f"Style          : {travel_style}")
+    print(f"Hotel Cost     : {hotel_cost}")
+    print(f"Food Cost      : {food_cost}")
+    print(f"Transport      : {transportation_cost}")
+    print(f"Misc Cost      : {miscellaneous_cost}")
+    print(f"Total Cost     : {total_estimated_cost}")
 
+    if total_estimated_cost > budget:
+        print("⚠️ Budget exceeded.")
+
+    print()
 
 # Call it with any trip
-print_trip_summary("Japan", 5, 1500, "Family")
-print_trip_summary("Solo", 5, 1500, "FamilyD")
+print_trip_summary("Japan", 5, 1500, "Family", 900, 300, 250, 100)
+print_trip_summary("Solo", 6, 1500, "Backpacker", 300, 100, 150, 75)

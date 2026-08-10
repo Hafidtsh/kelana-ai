@@ -1,19 +1,10 @@
-# destination = input("Masukan Destinasi : ")
-# country = input("Masukan Kota : ")
-# days = int(input("Berapa Hari : "))
-# budget = float(input("Budget : "))
-# currency = input("Mata Uang : ")
-# travel_month = input("Bulan : ")
-
-# print("===============")
-# print("KelanaAI")
-# print("===============")
-# print(f"Destination  : {destination}")
-# print(f"Country      : {country}")
-# print(f"Days         : {days}")
-# print(f"Budget       : {budget}")
-# print(f"Currency     : {currency}")
-# print(f"Travel Month : {travel_month}")
+def get_int_input(prompt):
+    """Minta input angka, ulangi hanya field ini kalau salah."""
+    while True:
+        try:
+            return int(input(prompt))
+        except ValueError:
+            print("⚠️  Harus angka! Coba lagi.")
 
 
 def print_trip_summary(
@@ -26,13 +17,12 @@ def print_trip_summary(
     transportation_cost,
     miscellaneous_cost,
 ):
-
     total_estimated_cost = (
         hotel_cost + food_cost + transportation_cost + miscellaneous_cost
     )
 
     print("===========================")
-    print("KelanaAI")
+    print("        KelanaAI           ")
     print("===========================")
     print(f"Destination    : {destination}")
     print(f"Days           : {days}")
@@ -45,20 +35,30 @@ def print_trip_summary(
     print(f"Total Cost     : {total_estimated_cost}")
 
     if total_estimated_cost > budget:
-        print("⚠️ Budget exceeded.")
+        print("⚠️  Budget exceeded!")
+    else:
+        print("✅ Budget aman.")
 
     print()
 
 
-# Call it with any trip
+# Input dari user
+destination = input("Masukan Destinasi : ")
+travel_style = input("Style             : ")
+days = get_int_input("Days              : ")
+budget = get_int_input("Budget            : ")
+hotel_cost = get_int_input("Hotel Cost        : ")
+food_cost = get_int_input("Food Cost         : ")
+transportation_cost = get_int_input("Transport Cost    : ")
+miscellaneous_cost = get_int_input("Misc Cost         : ")
+
 print_trip_summary(
-    input("Masukan Destinasi : "),
-    int(input("Days : ")),
-    int(input("Budget : ")),
-    input("Style : "),
-    int(input("Hotel : ")),
-    int(input("Food : ")),
-    int(input("Transport : ")),
-    int(input("Misc : ")),
+    destination,
+    days,
+    budget,
+    travel_style,
+    hotel_cost,
+    food_cost,
+    transportation_cost,
+    miscellaneous_cost,
 )
-# print_trip_summary("Solo", 6, 1500, "Backpacker", 300, 100, 150, 75)

@@ -15,13 +15,20 @@
 # print(f"Currency     : {currency}")
 # print(f"Travel Month : {travel_month}")
 
-def print_trip_summary(destination, days, budget, travel_style, hotel_cost, food_cost, transportation_cost, miscellaneous_cost):
+
+def print_trip_summary(
+    destination,
+    days,
+    budget,
+    travel_style,
+    hotel_cost,
+    food_cost,
+    transportation_cost,
+    miscellaneous_cost,
+):
 
     total_estimated_cost = (
-        hotel_cost
-        + food_cost
-        + transportation_cost
-        + miscellaneous_cost
+        hotel_cost + food_cost + transportation_cost + miscellaneous_cost
     )
 
     print("===========================")
@@ -42,6 +49,16 @@ def print_trip_summary(destination, days, budget, travel_style, hotel_cost, food
 
     print()
 
+
 # Call it with any trip
-print_trip_summary("Japan", 5, 1500, "Family", 900, 300, 250, 100)
-print_trip_summary("Solo", 6, 1500, "Backpacker", 300, 100, 150, 75)
+print_trip_summary(
+    input("Masukan Destinasi : "),
+    int(input("Days : ")),
+    int(input("Budget : ")),
+    input("Style : "),
+    int(input("Hotel : ")),
+    int(input("Food : ")),
+    int(input("Transport : ")),
+    int(input("Misc : ")),
+)
+# print_trip_summary("Solo", 6, 1500, "Backpacker", 300, 100, 150, 75)

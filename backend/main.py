@@ -68,6 +68,11 @@
 # ============================================================
 # KODE BARU (versi dengan validasi input)
 # ============================================================
+from services.trip_service import (
+    calculate_daily_budget,
+    get_trip_category,
+    get_recommended_places,
+)
 
 
 def get_int_input(prompt):
@@ -124,6 +129,7 @@ food_cost = get_int_input("Food Cost         : ")
 transportation_cost = get_int_input("Transport Cost    : ")
 miscellaneous_cost = get_int_input("Misc Cost         : ")
 
+
 print_trip_summary(
     destination,
     days,
@@ -134,3 +140,18 @@ print_trip_summary(
     transportation_cost,
     miscellaneous_cost,
 )
+
+# Rekomendasi dari trip_service
+daily = calculate_daily_budget(budget, days)
+category = get_trip_category(budget)
+places = get_recommended_places(destination)
+
+print("===========================")
+print("      REKOMENDASI          ")
+print("===========================")
+print(f"Kategori Trip  : {category}")
+print(f"Budget/Hari    : {daily:.2f} USD")
+print("Tempat Wisata  :")
+for place in places:
+    print(f"  - {place}")
+print()

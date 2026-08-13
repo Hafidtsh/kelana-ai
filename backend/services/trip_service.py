@@ -11,6 +11,15 @@ def get_trip_category(budget):
         return "Luxury"
 
 
+def get_travel_season(month):
+    if month == "December":
+        return "Peak Season"
+    elif month == "June":
+        return "Holiday Season"
+    else:
+        return "Regular Season"
+
+
 def get_recommended_places(destination):
     places = {
         "japan": ["Tokyo Tower", "Shibuya", "Mount Fuji"],

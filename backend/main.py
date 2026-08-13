@@ -72,6 +72,7 @@ from services.trip_service import (
     calculate_daily_budget,
     get_trip_category,
     get_recommended_places,
+    get_travel_season,
 )
 
 
@@ -122,6 +123,7 @@ def print_trip_summary(
 # Input dari user
 destination = input("Masukan Destinasi : ")
 travel_style = input("Style             : ")
+travel_month = input("Bulan Perjalanan  : ")
 days = get_int_input("Days              : ")
 budget = get_int_input("Budget            : ")
 hotel_cost = get_int_input("Hotel Cost        : ")
@@ -142,16 +144,23 @@ print_trip_summary(
 )
 
 # Rekomendasi dari trip_service
-daily = calculate_daily_budget(budget, days)
-category = get_trip_category(budget)
-places = get_recommended_places(destination)
+total_cost = hotel_cost + food_cost + transportation_cost + miscellaneous_cost
 
-print("===========================")
-print("      REKOMENDASI          ")
-print("===========================")
-print(f"Kategori Trip  : {category}")
-print(f"Budget/Hari    : {daily:.2f} USD")
-print("Tempat Wisata  :")
-for place in places:
-    print(f"  - {place}")
-print()
+if total_cost <= budget:
+    daily = calculate_daily_budget(budget, days)
+    category = get_trip_category(budget)
+    places = get_recommended_places(destination)
+    season = get_travel_season(travel_month)
+
+    print("===========================")
+    print("      REKOMENDASI          ")
+    print("===========================")
+    print(f"Kategori Trip  : {category}")
+    print(f"Budget/Hari    : {daily:.2f} USD")
+    print(f"Travel Season  : {season}")
+    print("Tempat Wisata  :")
+    for place in places:
+        print(f"  - {place}")
+    print()
+else:
+    print("❌ Rekomendasi tidak tersedia karena budget exceeded.")

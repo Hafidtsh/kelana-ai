@@ -1,6 +1,9 @@
 def calculate_daily_budget(budget, days):
     return budget / days
 
+def get_recommended_transport(travel_style):
+    if travel_style == "Family":
+        return "Train"
 
 def get_trip_category(budget):
     if budget < 1000:

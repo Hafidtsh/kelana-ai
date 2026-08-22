@@ -10,6 +10,10 @@ from services.trip_service import (
     get_recommended_transport
 )
 
+from services.bedrock_service import(
+    get_ai_recommendation
+)
+
 
 # =========================
 # Request Model
@@ -158,6 +162,13 @@ def create_trip(request: TripRequest):
     recommendation_transport = get_recommended_transport(
         request.travel_style
     )
+
+    ai_recommendation: str = get_ai_recommendation(
+        destination=request.destination,
+        days=request.days,
+        budget=request.budget,
+        travel_style=request.travel_style
+    )
     
     trip = Trip(
         destination  = request.destination,
@@ -165,6 +176,7 @@ def create_trip(request: TripRequest):
         budget       = request.budget,
         category     = category,
         daily_budget = daily_budget,
+        ai_recommendation = ai_recommendation
     )
 
     # save to PostgreSQL

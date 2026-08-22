@@ -26,3 +26,13 @@ Why didn't we rewrite calculate_daily_budget()?
 Kita tidak menulis ulang calculate_daily_budget() karena function yang sudah ada masih bisa kita gunakan kembali.
 What is Swagger UI used for?
 Swagger UI itu dipakai buat melihat dan mencoba API secara langsung lewat tampilan web.
+
+SESSION 4
+Why do we need a database?
+Database itu dibutuhkan buat nyimpen data secara terstruktur supaya data bisa disimpan, dicari, diubah, dan digunakan lagi kapan pun.
+What is an ORM?
+ORM (Object-Relational Mapping) itu alat yang bikin kita bisa berinteraksi dengan database menggunakan kode/programming language, tanpa harus nulis SQL terus-terusan.
+What is the difference between GET and POST?
+GET buat ngambil data, POST buat ngirim data atau bikin data baru.
+Why is FastAPI not enough to remember user data?
+FastAPI cuma ngurus request API, bukan menyimpan data user secara permanen. Kita butuh database supaya data user tetap tersimpan.

@@ -1,38 +1,63 @@
 SESSION 1
 What is a variable?
 Variable itu tempat/wadah buat menyimpan data atau nilai, supaya nanti bisa kita pakai lagi di program.
+
 Which data type should be used for budget?
 float
+
 Why do we use functions?
 Karena function dipakai supaya kode bisa kita pakai ulang tanpa nulis kode yang sama berkali-kali.
+
 What is the purpose of Git?
 Git itu digunakan buat ngelacak perubahan kode dan mengelola versi project.
 
 SESSION 2
 Why do we use if statements?
 if statement itu dipakai buat membuat keputusan berdasarkan suatu kondisi.
+
 Why is a list useful?
 List itu berguna buat nyimpen banyak data dalam satu tempat
+
 Why did we move the business logic into trip_service.py?
 Kita pindahin business logic ke trip_service.py supaya kode jadi lebih rapi, terstruktur, dan gampang dirawat.
+
 calculate_daily_budget() Intinya function itu yang ngitung budget total dibagi jumlah hari.
 
 SESSION 3
 What problem does an API solve?
 API itu jadi penghubung antara satu aplikasi dengan aplikasi atau service lain.
+
 What is the difference between a console application and a REST API?
 Aplikasi console berjalan dan berinteraksi dengan pengguna melalui terminal, sedangkan REST API memungkinkan aplikasi lain berkomunikasi dengannya melalui HTTP request.
+
 Why didn't we rewrite calculate_daily_budget()?
 Kita tidak menulis ulang calculate_daily_budget() karena function yang sudah ada masih bisa kita gunakan kembali.
+
 What is Swagger UI used for?
 Swagger UI itu dipakai buat melihat dan mencoba API secara langsung lewat tampilan web.
 
 SESSION 4
 Why do we need a database?
 Database itu dibutuhkan buat nyimpen data secara terstruktur supaya data bisa disimpan, dicari, diubah, dan digunakan lagi kapan pun.
+
 What is an ORM?
 ORM (Object-Relational Mapping) itu alat yang bikin kita bisa berinteraksi dengan database menggunakan kode/programming language, tanpa harus nulis SQL terus-terusan.
+
 What is the difference between GET and POST?
 GET buat ngambil data, POST buat ngirim data atau bikin data baru.
+
 Why is FastAPI not enough to remember user data?
 FastAPI cuma ngurus request API, bukan menyimpan data user secara permanen. Kita butuh database supaya data user tetap tersimpan.
+
+SESSION 5
+What is Amazon Bedrock?
+Amazon Bedrock adalah layanan AWS untuk mengakses **Foundation Models** melalui API dan membangun aplikasi **Generative AI** tanpa perlu membuat atau melatih model AI sendiri.
+
+Why can't traditional `if...else` logic solve every travel request?
+Karena permintaan travel bisa **sangat beragam dan tidak terstruktur**. `if...else` hanya bisa menangani kondisi yang sudah kita definisikan sebelumnya, sedangkan AI bisa memahami dan menghasilkan respons berdasarkan bahasa natural.
+
+Why do we use prompt engineering with Large Language Models?
+Untuk memberikan **instruksi yang jelas** kepada LLM agar menghasilkan output yang sesuai, konsisten, dan sesuai format yang kita inginkan.
+
+Why do we store AI-generated recommendations in PostgreSQL?
+Agar rekomendasi AI **tidak hilang setelah dibuat** dan bisa disimpan, diambil kembali, ditampilkan kepada user, atau digunakan untuk proses lain di aplikasi.

@@ -1,7 +1,15 @@
-.DS_Store
-backend/.venv
-backend/__pycache__
-backend/services/__pycache__
-backend/latihan.py
-frontend/kelana-ai
-backend/.env
+# Environment
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+venv/
+
+# Node
+node_modules/
+.next/

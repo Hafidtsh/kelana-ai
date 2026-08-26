@@ -14,15 +14,15 @@ AWS_REGION = os.getenv("AWS_REGION", "ap-southeast-2")
 MODEL_ID = os.getenv("MODEL_ID", "amazon.nova-lite-v1:0")
 
 TRAVEL_PLANNER_PROMPT = (
-    "You are an experienced travel planner.\n"
-    "Plan a {days}-day itinerary for {destination}.\n"
-    "Budget: USD {budget}\n"
-    "Travel Style: {travel_style}.\n\n"
-    "For each day, structure the itinerary with these three sections:\n"
-    "- Morning Activities\n"
-    "- Afternoon Activities\n"
-    "- Evening Activities\n\n"
-    "Give the answer with markdown format."
+    "Kamu adalah perencana perjalanan yang berpengalaman.\n"
+    "Buatkan itinerary {days} hari untuk {destination}.\n"
+    "Budget: Rp {budget}\n"
+    "Gaya Perjalanan: {travel_style}.\n\n"
+    "Untuk setiap hari, susun itinerary dengan tiga bagian berikut:\n"
+    "- Aktivitas Pagi\n"
+    "- Aktivitas Siang\n"
+    "- Aktivitas Malam\n\n"
+    "Jawab seluruhnya dalam Bahasa Indonesia dengan format markdown."
 )
 
 

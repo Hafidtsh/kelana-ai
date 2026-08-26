@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from models.trip import Trip
 from database import SessionLocal, init_db
@@ -29,6 +30,16 @@ class TripRequest(BaseModel):
 # FastAPI App
 # =========================
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 init_db()
 
@@ -171,11 +182,12 @@ def create_trip(request: TripRequest):
     )
     
     trip = Trip(
-        destination  = request.destination,
-        days         = request.days,
-        budget       = request.budget,
-        category     = category,
-        daily_budget = daily_budget,
+        destination       = request.destination,
+        days              = request.days,
+        budget            = request.budget,
+        category          = category,
+        daily_budget      = daily_budget,
+        travel_style      = request.travel_style,
         ai_recommendation = ai_recommendation
     )
 

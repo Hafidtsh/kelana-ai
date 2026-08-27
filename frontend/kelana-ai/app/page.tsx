@@ -4,7 +4,7 @@ import { useState } from "react";
 import Hero from "@/components/hero";
 import TripForm from "@/components/trip_form";
 import TripResults from "@/components/trip_results";
-import TripCard, { SAMPLE_TRIPS } from "@/components/trip_card";
+import TripsShowcase from "@/components/trips_showcase";
 import Footer from "@/components/footer";
 
 export default function Home() {
@@ -59,18 +59,14 @@ export default function Home() {
               Inspirasi Perjalanan
             </p>
             <h2 className="text-3xl font-bold sm:text-4xl">
-              Destinasi Populer
+              Trip Kamu
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-slate-400">
-              Temukan destinasi impianmu dan biarkan AI merancang itinerary yang sempurna untukmu.
+              Semua itinerary yang pernah kamu generate akan muncul di sini.
             </p>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {SAMPLE_TRIPS.map((trip) => (
-              <TripCard key={trip.destination} {...trip} />
-            ))}
-          </div>
+          <TripsShowcase />
 
         </div>
       </section>

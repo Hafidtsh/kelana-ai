@@ -1,52 +1,78 @@
+"use client";
+
 import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
 
 interface TripCardProps {
-  image: string;
+  id?: number;
+  image?: string;
   destination: string;
-  description: string;
+  description?: string;
   days: number;
-  budget: string;
+  budget: string | number;
   style: string;
+  onDelete?: (id: number) => void;
 }
 
 export default function TripCard({
+  id,
   image,
   destination,
   description,
   days,
   budget,
   style,
+  onDelete,
 }: TripCardProps) {
+  const [deleting, setDeleting] = useState(false);
+
+  const budgetDisplay =
+    typeof budget === "number"
+      ? `Rp ${budget.toLocaleString("id-ID")}`
+      : budget;
+
+  async function handleDelete(e: React.MouseEvent) {
+    e.preventDefault(); // don't trigger the Link wrapper
+    if (!id || !onDelete) return;
+    setDeleting(true);
+    onDelete(id);
+  }
+
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-cyan-500/30 hover:shadow-cyan-500/10 hover:shadow-2xl">
 
-      {/* Image */}
-      <div className="relative h-52 w-full overflow-hidden">
-        <Image
-          src={image}
-          alt={destination}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-        />
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
-
-        {/* Style badge */}
-        <span className="absolute left-4 top-4 rounded-full border border-cyan-400/30 bg-cyan-500/20 px-3 py-1 text-xs font-semibold capitalize text-cyan-300 backdrop-blur-sm">
-          {style}
-        </span>
-      </div>
+      {/* Image — shown only when provided */}
+      {image ? (
+        <div className="relative h-52 w-full overflow-hidden">
+          <Image
+            src={image}
+            alt={destination}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
+          <span className="absolute left-4 top-4 rounded-full border border-cyan-400/30 bg-cyan-500/20 px-3 py-1 text-xs font-semibold capitalize text-cyan-300 backdrop-blur-sm">
+            {style}
+          </span>
+        </div>
+      ) : (
+        <div className="relative flex h-28 w-full items-center justify-center bg-gradient-to-br from-cyan-900/40 to-slate-800/60">
+          <span className="text-4xl">🗺️</span>
+          <span className="absolute left-4 top-4 rounded-full border border-cyan-400/30 bg-cyan-500/20 px-3 py-1 text-xs font-semibold capitalize text-cyan-300 backdrop-blur-sm">
+            {style}
+          </span>
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex flex-1 flex-col gap-3 p-5">
-        <h3 className="text-xl font-bold text-white">
-          {destination}
-        </h3>
+        <h3 className="text-xl font-bold text-white">{destination}</h3>
 
-        <p className="flex-1 text-sm leading-6 text-slate-400">
-          {description}
-        </p>
+        {description && (
+          <p className="flex-1 text-sm leading-6 text-slate-400">{description}</p>
+        )}
 
         {/* Stats */}
         <div className="mt-2 flex items-center gap-4 border-t border-white/10 pt-4 text-sm text-slate-400">
@@ -56,9 +82,28 @@ export default function TripCard({
           </div>
           <div className="flex items-center gap-1.5">
             <span className="text-cyan-400">💰</span>
-            <span>{budget}</span>
+            <span>{budgetDisplay}</span>
           </div>
         </div>
+
+        {/* Actions — only shown for real DB trips (id present) */}
+        {id !== undefined && (
+          <div className="mt-3 flex items-center gap-2">
+            <Link
+              href={`/trips/${id}`}
+              className="flex-1 rounded-xl border border-cyan-500/30 bg-cyan-500/10 py-2 text-center text-sm font-semibold text-cyan-300 transition hover:bg-cyan-500/20"
+            >
+              Lihat Detail
+            </Link>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-400 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {deleting ? "..." : "🗑"}
+            </button>
+          </div>
+        )}
       </div>
 
     </div>
@@ -69,7 +114,7 @@ export default function TripCard({
 // =========================
 // Sample data for showcase
 // =========================
-export const SAMPLE_TRIPS: TripCardProps[] = [
+export const SAMPLE_TRIPS: Omit<TripCardProps, "id" | "onDelete">[] = [
   {
     image: "/pexels-satoshi-13598678.jpg",
     destination: "Tokyo, Jepang",

@@ -1,9 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from dotenv import load_dotenv
 from models.trip import Trip
 from database import SessionLocal, init_db
 
+load_dotenv()
 
 from services.trip_service import (
     calculate_daily_budget,

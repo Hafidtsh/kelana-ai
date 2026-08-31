@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { authHeaders } from "@/services/AuthService";
 
 interface TripFormProps {
   onResult: (result: any) => void;
@@ -36,9 +37,7 @@ export default function TripForm({
     try {
       const response = await fetch("http://localhost:8000/api/v1/trips", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: authHeaders(),
         body: JSON.stringify(data),
       });
 

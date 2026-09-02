@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from models.trip import Trip
 from models.user import User
 from database import SessionLocal, init_db
+from services.kb_service import retrieve_and_generate
 
 load_dotenv()
 
@@ -34,6 +35,13 @@ class TripRequest(BaseModel):
     budget: float
     travel_style: str
 
+class AskRequest(BaseModel):
+    question: str
+
+class AskResponse(BaseModel):
+    question: str
+    answer: str
+    documents: list[str]
 
 class RegisterRequest(BaseModel):
     name: str
@@ -231,6 +239,38 @@ def delete_trip(
     db.commit()
     return {"message": f"Trip {trip_id} deleted"}
 
+# =========================
+# Knowleage Base (Ask)
+# =========================
+@app.post("/api/v1/ask", response_model=AskResponse)
+def ask_knowledge_base(request: AskRequest):
+    try:
+        result = retrieve_and_generate(request.question)
+        return AskResponse(
+            question=request.question,
+            answer=result["answer"],
+            documents=result["documents"],
+        )
+    except ClientError as exc:
+        error = exc.response.get("Error", {})
+        metadata = exc.response.get("ResponseMetadata", {})
+        error_code = error.get("Code", "KnowledgeBaseError")
+        error_message = error.get("Message", "No error message returned")
+        request_id = metadata.get("RequestId", "unknown")
+        http_status = metadata.get("HTTPStatusCode", "unknown")
+
+        logger.exception(
+            "Knowledge Base request failed: code=%s message=%s request_id=%s http_status=%s",
+            error_code,
+            error_message,
+            request_id,
+            http_status,
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Knowledge Base request failed: {error_code} - {error_message}",
+        ) from exc
 
 # =========================
 # Misc (unchanged)

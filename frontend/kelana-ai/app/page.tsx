@@ -6,6 +6,7 @@ import TripForm from "@/components/trip_form";
 import TripResults from "@/components/trip_results";
 import TripsShowcase from "@/components/trips_showcase";
 import Footer from "@/components/footer";
+import TripAsk from "@/components/trip_ask";
 
 export default function Home() {
   const [tripResult, setTripResult] = useState<any>(null);
@@ -68,6 +69,24 @@ export default function Home() {
 
           <TripsShowcase />
 
+        </div>
+      </section>
+      <section id="results" className="px-6 py-20">
+           <div className="mx-auto max-w-6xl">
+
+             <div className="mb-12 text-center">
+                <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-cyan-400">
+                  Tempat Bertanya 👌
+                </p>
+                <h2 className="text-3xl font-bold sm:text-4xl">
+                  Pertanyaan Kamu
+                </h2>
+                <p className="mx-auto mt-4 max-w-xl text-slate-400">
+                  Karena takut bertanya sesat di jalan 😓
+                </p>
+          </div>
+          
+          <TripAsk/>
         </div>
       </section>
 

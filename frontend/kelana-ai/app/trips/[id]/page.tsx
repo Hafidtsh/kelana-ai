@@ -50,7 +50,7 @@ export default function TripDetailPage() {
   useEffect(() => {
     getTrip(Number(id))
       .then((data) => {
-        if (!data || data.detail) {
+        if (!data || (data as unknown as { detail?: string }).detail) {
           setNotFound(true);
         } else {
           setTrip(data);

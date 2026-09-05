@@ -11,6 +11,13 @@ import TripAsk from "@/components/trip_ask";
 export default function Home() {
   const [tripResult, setTripResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [tripsRefreshKey, setTripsRefreshKey] = useState(0);
+
+  function handleResult(result: any) {
+    setTripResult(result);
+    // Trigger TripsShowcase to re-fetch so the new trip appears immediately
+    setTripsRefreshKey((k) => k + 1);
+  }
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
@@ -38,7 +45,7 @@ export default function Home() {
 
             {/* Left — Form */}
             <div>
-              <TripForm onResult={setTripResult} onLoadingChange={setLoading} />
+              <TripForm onResult={handleResult} onLoadingChange={setLoading} />
             </div>
 
             {/* Right — Results */}
@@ -67,7 +74,7 @@ export default function Home() {
             </p>
           </div>
 
-          <TripsShowcase />
+          <TripsShowcase refreshKey={tripsRefreshKey} />
 
         </div>
       </section>

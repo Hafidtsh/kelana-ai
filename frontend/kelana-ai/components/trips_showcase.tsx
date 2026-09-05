@@ -24,7 +24,12 @@ function sortTrips(trips: Trip[], key: SortKey): Trip[] {
   }
 }
 
-export default function TripsShowcase() {
+interface TripsShowcaseProps {
+  /** Increment this value to trigger a re-fetch (e.g. after a new trip is created) */
+  refreshKey?: number;
+}
+
+export default function TripsShowcase({ refreshKey = 0 }: TripsShowcaseProps) {
   const [trips, setTrips]   = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]   = useState(false);
@@ -32,11 +37,13 @@ export default function TripsShowcase() {
   const [query, setQuery]   = useState("");
 
   useEffect(() => {
+    setLoading(true);
+    setError(false);
     getTrips()
       .then(setTrips)
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, []);
+  }, [refreshKey]); // re-fetch whenever refreshKey changes
 
   async function handleDelete(id: number) {
     setTrips((prev) => prev.filter((t) => t.id !== id));

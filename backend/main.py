@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
+import os
 
 from models.trip import Trip
 from models.user import User
@@ -104,7 +105,11 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        # Production frontend — set FRONTEND_URL in your deployment env vars
+        *([os.getenv("FRONTEND_URL")] if os.getenv("FRONTEND_URL") else []),
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

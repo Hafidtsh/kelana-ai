@@ -103,13 +103,28 @@ class ConversationDetailOut(BaseModel):
 # =========================
 app = FastAPI()
 
+# Origins allowed to call this API
+def _build_allowed_origins() -> list[str]:
+    origins = [
+        "http://localhost:3000",
+    ]
+    # Production frontend
+    if os.getenv("FRONTEND_URL"):
+        origins.append(os.getenv("FRONTEND_URL"))
+    # Vercel preview deployments (all subdomains of the project)
+    if os.getenv("VERCEL_PROJECT_NAME"):
+        project = os.getenv("VERCEL_PROJECT_NAME")  # e.g. kelana-ai-sage
+        # matches kelana-ai-sage-*.vercel.app and kelana-ai-sage.vercel.app
+        origins.append(f"https://{project}.vercel.app")
+
+    return origins
+
+ALLOWED_ORIGINS = _build_allowed_origins()
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        # Production frontend — set FRONTEND_URL in your deployment env vars
-        *([os.getenv("FRONTEND_URL")] if os.getenv("FRONTEND_URL") else []),
-    ],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"https://kelana-ai-sage.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -32,14 +32,19 @@ function saveSession(data: AuthResponse): void {
   localStorage.setItem(TOKEN_KEY, data.access_token)
   localStorage.setItem(USER_KEY, JSON.stringify(data.user))
   // Also set a cookie so Next.js middleware can read it
-  document.cookie = `kelana_token=${data.access_token}; path=/; max-age=${60 * 60 * 24}; SameSite=Strict`
+  // Secure flag required for HTTPS (production); omit on localhost
+  const isSecure = typeof window !== "undefined" && window.location.protocol === "https:"
+  const secureFlag = isSecure ? "; Secure" : ""
+  document.cookie = `kelana_token=${data.access_token}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax${secureFlag}`
 }
 
 export function clearSession(): void {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(USER_KEY)
   // Expire the cookie
-  document.cookie = "kelana_token=; path=/; max-age=0; SameSite=Strict"
+  const isSecure = typeof window !== "undefined" && window.location.protocol === "https:"
+  const secureFlag = isSecure ? "; Secure" : ""
+  document.cookie = `kelana_token=; path=/; max-age=0; SameSite=Lax${secureFlag}`
 }
 
 // ── Auth header helper ─────────────────────────────────────────

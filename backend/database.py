@@ -19,4 +19,8 @@ Base = declarative_base()
 # create all tables
 def init_db() -> None:
   """Create all SQLAlchemy tables for the configured database."""
+  # Import all models so SQLAlchemy registers them before create_all
+  from models.user import User          # noqa: F401
+  from models.trip import Trip          # noqa: F401
+  from models.conversation import Conversation, Message  # noqa: F401
   Base.metadata.create_all(bind=engine)

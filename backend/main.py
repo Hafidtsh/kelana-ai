@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from models.trip import Trip
 from models.user import User
+from models.conversation import Conversation, Message
 from database import SessionLocal, init_db
 from services.kb_service import retrieve_and_generate
 
@@ -23,6 +24,14 @@ from services.auth_service import (
     create_access_token,
     get_current_user,
     get_db,
+)
+from services.conversation_service import (
+    create_conversation,
+    get_conversation,
+    list_conversations,
+    delete_conversation,
+    add_message,
+    get_messages,
 )
 
 
@@ -52,6 +61,40 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+
+# Conversation schemas
+class ConversationCreate(BaseModel):
+    title: str | None = None
+
+class ConversationAskRequest(BaseModel):
+    question: str
+
+class MessageOut(BaseModel):
+    id: int
+    role: str
+    content: str
+    created_at: str          # ISO string
+
+    class Config:
+        from_attributes = True
+
+class ConversationOut(BaseModel):
+    id: int
+    title: str | None
+    created_at: str          # ISO string
+
+    class Config:
+        from_attributes = True
+
+class ConversationDetailOut(BaseModel):
+    id: int
+    title: str | None
+    created_at: str
+    messages: list[MessageOut]
+
+    class Config:
+        from_attributes = True
 
 
 # =========================
@@ -238,6 +281,131 @@ def delete_trip(
     db.delete(trip)
     db.commit()
     return {"message": f"Trip {trip_id} deleted"}
+
+# =========================
+# Conversations
+# =========================
+
+def _serialize_message(msg: Message) -> dict:
+    return {
+        "id": msg.id,
+        "role": msg.role,
+        "content": msg.content,
+        "created_at": msg.created_at.isoformat(),
+    }
+
+def _serialize_conversation(convo: Conversation) -> dict:
+    return {
+        "id": convo.id,
+        "title": convo.title,
+        "created_at": convo.created_at.isoformat(),
+    }
+
+
+@app.get("/api/v1/conversations")
+def list_convos(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List all conversations for the authenticated user (newest first)."""
+    convos = list_conversations(db, current_user.id)
+    return [_serialize_conversation(c) for c in convos]
+
+
+@app.post("/api/v1/conversations", status_code=status.HTTP_201_CREATED)
+def create_convo(
+    body: ConversationCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Create a new empty conversation."""
+    convo = create_conversation(db, user_id=current_user.id, title=body.title)
+    return _serialize_conversation(convo)
+
+
+@app.get("/api/v1/conversations/{conversation_id}")
+def get_convo(
+    conversation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return a conversation and all its messages."""
+    convo = get_conversation(db, conversation_id, current_user.id)
+    if convo is None:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    msgs = get_messages(db, conversation_id)
+    return {
+        **_serialize_conversation(convo),
+        "messages": [_serialize_message(m) for m in msgs],
+    }
+
+
+@app.delete("/api/v1/conversations/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_convo(
+    conversation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Delete a conversation and all its messages."""
+    deleted = delete_conversation(db, conversation_id, current_user.id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+
+@app.post("/api/v1/conversations/{conversation_id}/ask")
+def ask_in_conversation(
+    conversation_id: int,
+    body: ConversationAskRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Send a question inside a conversation.
+    Persists both the user message and the AI answer, then returns the answer.
+    """
+    convo = get_conversation(db, conversation_id, current_user.id)
+    if convo is None:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    trimmed = body.question.strip()
+    if not trimmed:
+        raise HTTPException(status_code=422, detail="Question cannot be empty")
+
+    # Persist user message
+    add_message(db, conversation_id=conversation_id, role="user", content=trimmed)
+
+    # Call Knowledge Base
+    try:
+        result = retrieve_and_generate(trimmed)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Knowledge Base error: {exc}",
+        ) from exc
+
+    # Persist assistant message
+    ai_msg = add_message(
+        db,
+        conversation_id=conversation_id,
+        role="assistant",
+        content=result["answer"],
+    )
+
+    # Auto-set title from first question if still None
+    if convo.title is None:
+        short_title = trimmed[:60] + ("…" if len(trimmed) > 60 else "")
+        convo.title = short_title
+        db.commit()
+
+    return {
+        "question": trimmed,
+        "answer": result["answer"],
+        "documents": result["documents"],
+        "message_id": ai_msg.id,
+        "conversation_id": conversation_id,
+    }
+
 
 # =========================
 # Knowleage Base (Ask)

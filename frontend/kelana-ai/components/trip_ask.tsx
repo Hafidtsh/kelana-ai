@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { authHeaders, getToken } from "@/services/AuthService";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -14,15 +15,15 @@ interface Message {
   documents?: string[];
 }
 
-interface AskResponse {
-  question: string;
-  answer: string;
-  documents: string[];
+interface ConversationMeta {
+  id: number;
+  title: string | null;
+  created_at: string;
 }
 
 interface TripAskProps {
   apiUrl?: string;
-  /** Conversation title shown in the header */
+  /** Default conversation title shown before the first message is sent */
   title?: string;
 }
 
@@ -50,27 +51,14 @@ function formatFull(iso: string): string {
 function TypingIndicator() {
   return (
     <div className="flex items-end gap-3">
-      {/* AI avatar */}
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-500/10 text-base">
         🤖
       </div>
-
       <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-sm border border-white/10 bg-white/5 px-4 py-3">
-        <span
-          className="h-2 w-2 rounded-full bg-cyan-400 animate-bounce"
-          style={{ animationDelay: "0ms" }}
-        />
-        <span
-          className="h-2 w-2 rounded-full bg-cyan-400 animate-bounce"
-          style={{ animationDelay: "150ms" }}
-        />
-        <span
-          className="h-2 w-2 rounded-full bg-cyan-400 animate-bounce"
-          style={{ animationDelay: "300ms" }}
-        />
-        <span className="ml-2 text-xs text-slate-400">
-          AI sedang mengetik…
-        </span>
+        <span className="h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+        <span className="h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+        <span className="h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+        <span className="ml-2 text-xs text-slate-400">AI sedang mengetik…</span>
       </div>
     </div>
   );
@@ -82,11 +70,7 @@ function ChatBubble({ message }: { message: Message }) {
   const isUser = message.role === "user";
 
   return (
-    <div
-      className={`flex items-end gap-3 ${
-        isUser ? "flex-row-reverse" : "flex-row"
-      }`}
-    >
+    <div className={`flex items-end gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
       {/* Avatar */}
       <div
         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-base ${
@@ -99,11 +83,7 @@ function ChatBubble({ message }: { message: Message }) {
       </div>
 
       {/* Bubble + timestamp */}
-      <div
-        className={`flex max-w-[75%] flex-col gap-1 ${
-          isUser ? "items-end" : "items-start"
-        }`}
-      >
+      <div className={`flex max-w-[75%] flex-col gap-1 ${isUser ? "items-end" : "items-start"}`}>
         <div
           className={`rounded-2xl px-4 py-3 text-sm leading-6 ${
             isUser
@@ -134,25 +114,21 @@ function ChatBubble({ message }: { message: Message }) {
           )}
 
           {/* Source documents – assistant only */}
-          {!isUser &&
-            message.documents &&
-            message.documents.length > 0 && (
-              <div className="mt-3 border-t border-white/10 pt-2">
-                <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Sources
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {message.documents.map((doc, i) => (
-                    <span
-                      key={`${doc}-${i}`}
-                      className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-slate-400"
-                    >
-                      📄 {doc}
-                    </span>
-                  ))}
-                </div>
+          {!isUser && message.documents && message.documents.length > 0 && (
+            <div className="mt-3 border-t border-white/10 pt-2">
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">Sources</p>
+              <div className="flex flex-wrap gap-1.5">
+                {message.documents.map((doc, i) => (
+                  <span
+                    key={`${doc}-${i}`}
+                    className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-slate-400"
+                  >
+                    📄 {doc}
+                  </span>
+                ))}
               </div>
-            )}
+            </div>
+          )}
         </div>
 
         {/* Timestamp */}
@@ -179,13 +155,43 @@ export default function TripAsk({
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState("");
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Conversation state – null until the first message is sent
+  const [conversation, setConversation] = useState<ConversationMeta | null>(null);
+  // Tracks whether we are creating a new conversation (to avoid race conditions)
+  const conversationIdRef = useRef<number | null>(null);
 
-  // Auto-scroll: fires on initial open and whenever messages list or typing state changes
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isLoggedIn = Boolean(getToken());
+
+  // Auto-scroll on new messages / typing indicator
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
+  // ── Create or reuse a conversation, returns its id ──────────────────────────
+  async function ensureConversation(firstQuestion: string): Promise<number> {
+    // Already have one in this session
+    if (conversationIdRef.current !== null) return conversationIdRef.current;
+
+    const base = apiUrl ?? "";
+    const res = await fetch(`${base}/api/v1/conversations`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ title: firstQuestion.slice(0, 60) }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      throw new Error(err?.detail ?? "Gagal membuat percakapan.");
+    }
+
+    const data: ConversationMeta = await res.json();
+    conversationIdRef.current = data.id;
+    setConversation(data);
+    return data.id;
+  }
+
+  // ── Send message ────────────────────────────────────────────────────────────
   async function handleAsk(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -194,10 +200,9 @@ export default function TripAsk({
       setError("Pertanyaan tidak boleh kosong.");
       return;
     }
-
     setError("");
 
-    // Add user message immediately
+    // Optimistically show user message
     const userMsg: Message = {
       id: crypto.randomUUID(),
       role: "user",
@@ -206,46 +211,72 @@ export default function TripAsk({
     };
     setMessages((prev) => [...prev, userMsg]);
     setQuestion("");
-
-    // Show typing indicator while waiting for AI
     setIsTyping(true);
 
     try {
-      const endpoint = apiUrl ? `${apiUrl}/ask` : "/api/v1/ask";
+      const base = apiUrl ?? "";
 
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: trimmed }),
-      });
+      if (isLoggedIn) {
+        // ── Authenticated path: persist to DB ──────────────────────────────
+        const convoId = await ensureConversation(trimmed);
 
-      const data: AskResponse = await res.json();
+        const res = await fetch(`${base}/api/v1/conversations/${convoId}/ask`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ question: trimmed }),
+        });
 
-      if (!res.ok) {
-        throw new Error(
-          (data as unknown as { detail?: string })?.detail ||
-            "Gagal mendapatkan jawaban."
-        );
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.detail ?? "Gagal mendapatkan jawaban.");
+
+        // Update conversation title if backend set it
+        if (conversation && data.conversation_id) {
+          // Re-fetch to get updated title
+          const metaRes = await fetch(`${base}/api/v1/conversations/${convoId}`, {
+            headers: authHeaders(),
+          });
+          if (metaRes.ok) {
+            const meta = await metaRes.json();
+            setConversation({ id: meta.id, title: meta.title, created_at: meta.created_at });
+          }
+        }
+
+        const aiMsg: Message = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: data.answer,
+          timestamp: new Date().toISOString(),
+          documents: data.documents,
+        };
+        setMessages((prev) => [...prev, aiMsg]);
+      } else {
+        // ── Guest path: stateless /ask (no persistence) ────────────────────
+        const res = await fetch(`${base}/api/v1/ask`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question: trimmed }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.detail ?? "Gagal mendapatkan jawaban.");
+
+        const aiMsg: Message = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: data.answer,
+          timestamp: new Date().toISOString(),
+          documents: data.documents,
+        };
+        setMessages((prev) => [...prev, aiMsg]);
       }
-
-      const aiMsg: Message = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: data.answer,
-        timestamp: new Date().toISOString(),
-        documents: data.documents,
-      };
-      setMessages((prev) => [...prev, aiMsg]);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Terjadi kesalahan."
-      );
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan.");
     } finally {
       setIsTyping(false);
     }
   }
 
-  // Enter submits, Shift+Enter inserts newline
+  // Enter = submit, Shift+Enter = newline
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -255,35 +286,43 @@ export default function TripAsk({
 
   const hasMessages = messages.length > 0;
 
+  // The title displayed in the header: use the server-side conversation title once available
+  const displayTitle = conversation?.title ?? title;
+
   return (
     <div className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-xl transition-all duration-300 hover:border-cyan-500/30 hover:shadow-2xl hover:shadow-cyan-500/10">
 
       {/* Decorative glow */}
       <div className="pointer-events-none absolute -right-20 -top-20 h-40 w-40 rounded-full bg-cyan-500/10 blur-3xl" />
 
-      {/* ── Header – Conversation Title ─────────────────────────────────── */}
+      {/* ── Header – Conversation Title ───────────────────────────────── */}
       <div className="relative flex items-center gap-3 border-b border-white/10 bg-black/20 px-5 py-4">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-400/30 bg-cyan-500/10 text-xl">
           🤖
         </div>
 
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-base font-bold text-white">
-            {title}
+          {/* Conversation title – updates once AI responds */}
+          <h2 className="truncate text-base font-bold text-white" title={displayTitle}>
+            {displayTitle}
           </h2>
           <p className="text-xs text-slate-400">
-            Tanya apa saja tentang perjalananmu
+            {isLoggedIn
+              ? conversation
+                ? `Percakapan #${conversation.id}`
+                : "Percakapan baru"
+              : "Mode tamu · percakapan tidak disimpan"}
           </p>
         </div>
 
-        {/* Online status indicator */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        {/* Status indicator */}
+        <div className="flex shrink-0 items-center gap-1.5">
           <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
           <span className="text-xs text-emerald-400">Online</span>
         </div>
       </div>
 
-      {/* ── Message List ────────────────────────────────────────────────── */}
+      {/* ── Message List ──────────────────────────────────────────────── */}
       <div
         className={`relative flex flex-col gap-4 overflow-y-auto px-5 py-5 scroll-smooth ${
           hasMessages ? "h-[420px]" : "h-auto"
@@ -293,16 +332,16 @@ export default function TripAsk({
         {!hasMessages && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="mb-4 text-4xl">✈️</div>
-            <p className="text-sm font-medium text-slate-400">
-              Belum ada percakapan
-            </p>
+            <p className="text-sm font-medium text-slate-400">Belum ada percakapan</p>
             <p className="mt-1 text-xs text-slate-600">
-              Kirim pertanyaan pertamamu di bawah
+              {isLoggedIn
+                ? "Kirim pertanyaan pertamamu di bawah"
+                : "Login untuk menyimpan percakapan"}
             </p>
           </div>
         )}
 
-        {/* Chat bubbles */}
+        {/* Bubbles */}
         {messages.map((msg) => (
           <ChatBubble key={msg.id} message={msg} />
         ))}
@@ -310,11 +349,11 @@ export default function TripAsk({
         {/* Typing indicator */}
         {isTyping && <TypingIndicator />}
 
-        {/* Invisible anchor for auto-scroll */}
+        {/* Scroll anchor */}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ── Input Area ──────────────────────────────────────────────────── */}
+      {/* ── Input Area ────────────────────────────────────────────────── */}
       <div className="relative border-t border-white/10 bg-black/10 px-5 py-4">
 
         {/* Error banner */}
@@ -340,7 +379,7 @@ export default function TripAsk({
             type="submit"
             disabled={isTyping || !question.trim()}
             aria-label="Kirim pesan"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-500/10 text-lg text-cyan-300 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 transition hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isTyping ? (
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-cyan-300/30 border-t-cyan-300" />
@@ -360,6 +399,9 @@ export default function TripAsk({
 
         <p className="mt-2 text-center text-[10px] text-slate-600">
           Powered by AWS Bedrock · KelanaAI
+          {!isLoggedIn && (
+            <span className="ml-1 text-amber-600"> · <a href="/login" className="underline hover:text-amber-400">Login</a> untuk simpan percakapan</span>
+          )}
         </p>
       </div>
     </div>
